@@ -21,13 +21,13 @@ export default function LimitSelector({
   const endIndex = Math.min(currentPage * limit, total);
 
   return (
-    <div style={{ marginBottom: "16px" }}>
-      <label>
-        Results per page:{" "}
+    <div className="mb-4 flex items-center gap-4">
+      <label className="flex items-center gap-2">
+        <span className="text-sm font-medium">Results per page:</span>
         <select
           value={limit}
           onChange={handleChange}
-          style={{ border: "1px solid black", padding: "4px" }}
+          className="border border-black px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-[#265b4e]"
         >
           <option value="5">5</option>
           <option value="10">10</option>
@@ -36,7 +36,7 @@ export default function LimitSelector({
           <option value="100">100</option>
         </select>
       </label>
-      <span style={{ marginLeft: "16px" }}>
+      <span className="text-sm text-gray-600">
         Showing {startIndex} to {endIndex} of {total} results
       </span>
     </div>

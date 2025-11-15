@@ -20,31 +20,29 @@ export default function PaginationControls({
   }
 
   return (
-    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+    <div className="flex gap-2 items-center">
       <button
         onClick={onPreviousPage}
         disabled={!hasPreviousPage}
-        style={{
-          padding: "8px 16px",
-          border: "1px solid black",
-          cursor: hasPreviousPage ? "pointer" : "not-allowed",
-          opacity: hasPreviousPage ? 1 : 0.5,
-        }}
+        className={`px-4 py-2 border border-black rounded transition-colors ${
+          hasPreviousPage
+            ? "hover:bg-gray-100 cursor-pointer"
+            : "cursor-not-allowed opacity-50"
+        }`}
       >
         Previous
       </button>
-      <span>
+      <span className="mx-2">
         Page {currentPage} of {totalPages}
       </span>
       <button
         onClick={onNextPage}
         disabled={!hasNextPage}
-        style={{
-          padding: "8px 16px",
-          border: "1px solid black",
-          cursor: hasNextPage ? "pointer" : "not-allowed",
-          opacity: hasNextPage ? 1 : 0.5,
-        }}
+        className={`px-4 py-2 border border-black rounded transition-colors ${
+          hasNextPage
+            ? "hover:bg-gray-100 cursor-pointer"
+            : "cursor-not-allowed opacity-50"
+        }`}
       >
         Next
       </button>
