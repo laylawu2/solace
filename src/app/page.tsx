@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface Advocate {
   id: string;
@@ -15,7 +15,7 @@ interface Advocate {
 
 export default function Home() {
   const [advocates, setAdvocates] = useState<Advocate[]>([]);
-  const [filteredAdvocates, setFilteredAdvocates] = useState<Advocate[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     console.log("fetching advocates...");
@@ -28,40 +28,39 @@ export default function Home() {
       })
       .then((jsonResponse) => {
         setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
       })
       .catch((error) => {
         console.error("Error fetching advocates:", error);
       });
   }, []);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const searchTerm = e.target.value;
-
-    const searchTermElement = document.getElementById("search-term");
-    if (searchTermElement) {
-      searchTermElement.textContent = searchTerm;
-    }
+  const filteredAdvocates = useMemo(() => {
+    if (!searchTerm) return advocates;
 
     console.log("filtering advocates...");
     const searchLower = searchTerm.toLowerCase();
-    const filteredAdvocates = advocates.filter((advocate) => {
+
+    return advocates.filter((advocate) => {
       return (
         advocate.firstName.toLowerCase().includes(searchLower) ||
         advocate.lastName.toLowerCase().includes(searchLower) ||
         advocate.city.toLowerCase().includes(searchLower) ||
         advocate.degree.toLowerCase().includes(searchLower) ||
-        advocate.specialties.some((s) => s.toLowerCase().includes(searchLower)) ||
+        advocate.specialties.some((s) =>
+          s.toLowerCase().includes(searchLower)
+        ) ||
         advocate.yearsOfExperience.toString().includes(searchTerm)
       );
     });
+  }, [advocates, searchTerm]);
 
-    setFilteredAdvocates(filteredAdvocates);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   const onClick = () => {
     console.log(advocates);
-    setFilteredAdvocates(advocates);
+    setSearchTerm("");
   };
 
   return (
@@ -72,9 +71,13 @@ export default function Home() {
       <div>
         <p>Search</p>
         <p>
-          Searching for: <span id="search-term"></span>
+          Searching for: <span>{searchTerm}</span>
         </p>
-        <input style={{ border: "1px solid black" }} onChange={onChange} />
+        <input
+          style={{ border: "1px solid black" }}
+          value={searchTerm}
+          onChange={onChange}
+        />
         <button onClick={onClick}>Reset Search</button>
       </div>
       <br />
