@@ -35,7 +35,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setPage(1); // Reset to first page when search changes
+      setPage(1);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -45,7 +45,6 @@ export default function Home() {
   useEffect(() => {
     const fetchAdvocates = async () => {
       setIsLoading(true);
-      console.log("fetching advocates...");
 
       try {
         const url = new URL("/api/advocates", window.location.origin);
@@ -82,7 +81,6 @@ export default function Home() {
   };
 
   const onClick = () => {
-    console.log(advocates);
     setSearchTerm("");
   };
 
@@ -102,7 +100,7 @@ export default function Home() {
     setLimit(parseInt(e.target.value));
     setPage(1);
   };
-  console.log("pagination", pagination);
+
   return (
     <main style={{ margin: "24px" }}>
       <h1>Solace Advocates</h1>

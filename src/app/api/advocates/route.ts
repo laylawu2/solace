@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const validatedLimit = Math.min(Math.max(1, limit), 100); // Max 100 per page
   const offset = (validatedPage - 1) * validatedLimit;
 
-  // If using static data (for development)
+  /********************** If using static data *******************************/
   let filteredData = advocateData;
 
   // Apply search filter
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         advocate.city,
         advocate.degree,
         ...(Array.isArray(advocate.specialties) ? advocate.specialties : []),
-        advocate.yearsOfExperience.toString(),
+        advocate.yearsOfExperience.toString()
       ]
         .join(" ")
         .toLowerCase();
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   // Apply pagination
   const paginatedData = filteredData.slice(offset, offset + validatedLimit);
 
-  // Uncomment this section to use a database with optimized search and pagination
+  /************* If using database query instead of static data ************/
   /*
   let query = db.select().from(advocates);
 
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       total,
       totalPages,
       hasNextPage: validatedPage < totalPages,
-      hasPreviousPage: validatedPage > 1,
-    },
+      hasPreviousPage: validatedPage > 1
+    }
   });
 }
