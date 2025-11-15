@@ -13,9 +13,23 @@ interface Advocate {
   phoneNumber: string;
 }
 
+interface AdvocateWithSearch extends Advocate {
+  _searchableText: string;
+}
+
 export default function Home() {
-  const [advocates, setAdvocates] = useState<Advocate[]>([]);
+  const [advocates, setAdvocates] = useState<AdvocateWithSearch[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  // Debounce search term, wait 300ms after user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     console.log("fetching advocates...");
@@ -27,7 +41,23 @@ export default function Home() {
         return response.json();
       })
       .then((jsonResponse) => {
-        setAdvocates(jsonResponse.data);
+        // Pre-compute searchable text for each advocate
+        const advocatesWithSearch: AdvocateWithSearch[] = jsonResponse.data.map(
+          (advocate: Advocate) => ({
+            ...advocate,
+            _searchableText: [
+              advocate.firstName,
+              advocate.lastName,
+              advocate.city,
+              advocate.degree,
+              ...advocate.specialties,
+              advocate.yearsOfExperience.toString()
+            ]
+              .join(" ")
+              .toLowerCase()
+          })
+        );
+        setAdvocates(advocatesWithSearch);
       })
       .catch((error) => {
         console.error("Error fetching advocates:", error);
@@ -35,27 +65,15 @@ export default function Home() {
   }, []);
 
   const filteredAdvocates = useMemo(() => {
-    if (!searchTerm) return advocates;
+    if (!debouncedSearchTerm) return advocates;
 
     console.log("filtering advocates...");
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower = debouncedSearchTerm.toLowerCase();
 
-    return advocates.filter((advocate) => {
-      // Combine all searchable fields into one string
-      const searchableText = [
-        advocate.firstName,
-        advocate.lastName,
-        advocate.city,
-        advocate.degree,
-        ...advocate.specialties,
-        advocate.yearsOfExperience.toString(),
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return searchableText.includes(searchLower);
-    });
-  }, [advocates, searchTerm]);
+    return advocates.filter((advocate) =>
+      advocate._searchableText.includes(searchLower)
+    );
+  }, [advocates, debouncedSearchTerm]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
