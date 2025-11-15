@@ -41,16 +41,19 @@ export default function Home() {
     const searchLower = searchTerm.toLowerCase();
 
     return advocates.filter((advocate) => {
-      return (
-        advocate.firstName.toLowerCase().includes(searchLower) ||
-        advocate.lastName.toLowerCase().includes(searchLower) ||
-        advocate.city.toLowerCase().includes(searchLower) ||
-        advocate.degree.toLowerCase().includes(searchLower) ||
-        advocate.specialties.some((s) =>
-          s.toLowerCase().includes(searchLower)
-        ) ||
-        advocate.yearsOfExperience.toString().includes(searchTerm)
-      );
+      // Combine all searchable fields into one string
+      const searchableText = [
+        advocate.firstName,
+        advocate.lastName,
+        advocate.city,
+        advocate.degree,
+        ...advocate.specialties,
+        advocate.yearsOfExperience.toString(),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(searchLower);
     });
   }, [advocates, searchTerm]);
 
