@@ -14,3 +14,8 @@
 2. Implement search response caching
 3. Set up error tracking and user click event tracking
 4. Set up more read replicas to handle search traffic
+5. Implement full text search if string matching search becomes insufficient for the business need.
+
+### Future (more far fetched ideas)
+
+1. Potentially enrich the "Find Advocate" experience with a flow to gauge what the user looks for in an advocate (years of experience, availability etc). Then use the gathered information to provide them with a list of curated advocates.
