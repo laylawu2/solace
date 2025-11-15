@@ -100,7 +100,6 @@ export default function Home() {
   };
 
   const toggleSpecialties = (rowIndex: number) => {
-    console.log("Toggling specialties for row:", rowIndex);
     setExpandedSpecialties((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(rowIndex)) {
@@ -108,7 +107,7 @@ export default function Home() {
       } else {
         newSet.add(rowIndex);
       }
-      console.log("Expanded rows:", Array.from(newSet));
+
       return newSet;
     });
   };
