@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import PaginationControls from "@/components/PaginationControls";
+import LimitSelector from "@/components/LimitSelector";
 
 interface Advocate {
   id: string;
@@ -13,75 +15,87 @@ interface Advocate {
   phoneNumber: string;
 }
 
-interface AdvocateWithSearch extends Advocate {
-  _searchableText: string;
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export default function Home() {
-  const [advocates, setAdvocates] = useState<AdvocateWithSearch[]>([]);
+  const [advocates, setAdvocates] = useState<Advocate[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
 
   // Debounce search term, wait 300ms after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
+      setPage(1);
     }, 300);
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Fetch advocates with server-side search and pagination
   useEffect(() => {
-    console.log("fetching advocates...");
-    fetch("/api/advocates")
-      .then((response) => {
+    const fetchAdvocates = async () => {
+      setIsLoading(true);
+
+      try {
+        const url = new URL("/api/advocates", window.location.origin);
+
+        if (debouncedSearchTerm) {
+          url.searchParams.set("search", debouncedSearchTerm);
+        }
+
+        url.searchParams.set("page", page.toString());
+        url.searchParams.set("limit", limit.toString());
+
+        const response = await fetch(url.toString());
+
         if (!response.ok) {
           throw new Error("Failed to fetch advocates");
         }
-        return response.json();
-      })
-      .then((jsonResponse) => {
-        // Pre-compute searchable text for each advocate
-        const advocatesWithSearch: AdvocateWithSearch[] = jsonResponse.data.map(
-          (advocate: Advocate) => ({
-            ...advocate,
-            _searchableText: [
-              advocate.firstName,
-              advocate.lastName,
-              advocate.city,
-              advocate.degree,
-              ...advocate.specialties,
-              advocate.yearsOfExperience.toString()
-            ]
-              .join(" ")
-              .toLowerCase()
-          })
-        );
-        setAdvocates(advocatesWithSearch);
-      })
-      .catch((error) => {
+
+        const jsonResponse = await response.json();
+
+        setAdvocates(jsonResponse.data);
+        setPagination(jsonResponse.pagination);
+      } catch (error) {
         console.error("Error fetching advocates:", error);
-      });
-  }, []);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const filteredAdvocates = useMemo(() => {
-    if (!debouncedSearchTerm) return advocates;
-
-    console.log("filtering advocates...");
-    const searchLower = debouncedSearchTerm.toLowerCase();
-
-    return advocates.filter((advocate) =>
-      advocate._searchableText.includes(searchLower)
-    );
-  }, [advocates, debouncedSearchTerm]);
+    fetchAdvocates();
+  }, [debouncedSearchTerm, page, limit]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
   const onClick = () => {
-    console.log(advocates);
     setSearchTerm("");
+  };
+
+  const handlePreviousPage = () => {
+    if (pagination?.hasPreviousPage) {
+      setPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (pagination?.hasNextPage) {
+      setPage((prev) => prev + 1);
+    }
   };
 
   return (
@@ -98,11 +112,25 @@ export default function Home() {
           style={{ border: "1px solid black" }}
           value={searchTerm}
           onChange={onChange}
+          placeholder="Search advocates..."
         />
         <button onClick={onClick}>Reset Search</button>
       </div>
       <br />
+      {pagination && (
+        <LimitSelector
+          limit={limit}
+          total={pagination.total}
+          currentPage={page}
+          currentCount={advocates.length}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
+      )}
       <br />
+      {isLoading && <p>Loading...</p>}
       <table>
         <thead>
           <tr>
@@ -116,7 +144,7 @@ export default function Home() {
           </tr>
         </thead>
         <tbody>
-          {filteredAdvocates.map((advocate) => {
+          {advocates.map((advocate) => {
             return (
               <tr key={advocate.id}>
                 <td>{advocate.firstName}</td>
@@ -135,6 +163,18 @@ export default function Home() {
           })}
         </tbody>
       </table>
+      {!isLoading && advocates.length === 0 && <p>No advocates found.</p>}
+      <br />
+      {pagination && (
+        <PaginationControls
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          hasNextPage={pagination.hasNextPage}
+          hasPreviousPage={pagination.hasPreviousPage}
+          onNextPage={handleNextPage}
+          onPreviousPage={handlePreviousPage}
+        />
+      )}
     </main>
   );
 }
