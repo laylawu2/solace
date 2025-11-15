@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import PaginationControls from "@/components/PaginationControls";
 import LimitSelector from "@/components/LimitSelector";
+import SearchBar from "@/components/SearchBar";
 
 interface Advocate {
   id: string;
@@ -32,6 +33,9 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [expandedSpecialties, setExpandedSpecialties] = useState<Set<number>>(
+    new Set()
+  );
 
   // Debounce search term, wait 300ms after user stops typing
   useEffect(() => {
@@ -47,6 +51,7 @@ export default function Home() {
   useEffect(() => {
     const fetchAdvocates = async () => {
       setIsLoading(true);
+      setExpandedSpecialties(new Set()); // Reset expanded rows on page change
 
       try {
         const url = new URL("/api/advocates", window.location.origin);
@@ -78,11 +83,7 @@ export default function Home() {
     fetchAdvocates();
   }, [debouncedSearchTerm, page, limit]);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const onClick = () => {
+  const handleResetSearch = () => {
     setSearchTerm("");
   };
 
@@ -98,25 +99,30 @@ export default function Home() {
     }
   };
 
+  const toggleSpecialties = (rowIndex: number) => {
+    console.log("Toggling specialties for row:", rowIndex);
+    setExpandedSpecialties((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowIndex)) {
+        newSet.delete(rowIndex);
+      } else {
+        newSet.add(rowIndex);
+      }
+      console.log("Expanded rows:", Array.from(newSet));
+      return newSet;
+    });
+  };
+
   return (
-    <main style={{ margin: "24px" }}>
-      <h1>Solace Advocates</h1>
-      <br />
-      <br />
-      <div>
-        <p>Search</p>
-        <p>
-          Searching for: <span>{searchTerm}</span>
-        </p>
-        <input
-          style={{ border: "1px solid black" }}
-          value={searchTerm}
-          onChange={onChange}
-          placeholder="Search advocates..."
-        />
-        <button onClick={onClick}>Reset Search</button>
-      </div>
-      <br />
+    <main className="p-12 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-8">Solace Advocates</h1>
+
+      <SearchBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onReset={handleResetSearch}
+      />
+
       {pagination && (
         <LimitSelector
           limit={limit}
@@ -129,42 +135,95 @@ export default function Home() {
           }}
         />
       )}
-      <br />
-      {isLoading && <p>Loading...</p>}
-      <table>
-        <thead>
-          <tr>
+
+      {isLoading && <p className="my-4">Loading...</p>}
+
+      <table className="w-full border-collapse bg-white mb-4">
+        <thead className="bg-white border-b-2 border-gray-200">
+          <tr className="text-left [&>th]:px-4 [&>th]:py-6">
             <th>First Name</th>
             <th>Last Name</th>
             <th>City</th>
             <th>Degree</th>
-            <th>Specialties</th>
+            <th className="max-w-md">Specialties</th>
             <th>Years of Experience</th>
             <th>Phone Number</th>
           </tr>
         </thead>
         <tbody>
-          {advocates.map((advocate) => {
+          {advocates.map((advocate, index) => {
             return (
-              <tr key={advocate.id}>
-                <td>{advocate.firstName}</td>
-                <td>{advocate.lastName}</td>
-                <td>{advocate.city}</td>
-                <td>{advocate.degree}</td>
+              <tr
+                key={advocate.id}
+                className={`transition-colors [&>td]:px-4 [&>td]:py-3 ${
+                  index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                } hover:bg-[#265b4e]/5`}
+              >
                 <td>
-                  {advocate.specialties.map((s, index) => (
-                    <div key={index}>{s}</div>
-                  ))}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#d59618] text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                      {advocate.firstName[0]}
+                      {advocate.lastName[0]}
+                    </div>
+                    <span className="font-medium">{advocate.firstName}</span>
+                  </div>
                 </td>
-                <td>{advocate.yearsOfExperience}</td>
-                <td>{advocate.phoneNumber}</td>
+                <td className="font-medium">{advocate.lastName}</td>
+                <td>
+                  <span className="text-gray-700">{advocate.city}</span>
+                </td>
+                <td>
+                  <span className="text-gray-700">{advocate.degree}</span>
+                </td>
+                <td className="max-w-md">
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    {(expandedSpecialties.has(index)
+                      ? advocate.specialties
+                      : advocate.specialties.slice(0, 2)
+                    ).map((specialty, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-[#265b4e] text-[#265b4e]"
+                      >
+                        {specialty}
+                      </span>
+                    ))}
+                    {advocate.specialties.length > 2 && (
+                      <button
+                        onClick={() => toggleSpecialties(index)}
+                        className="text-xs text-[#265b4e] hover:text-[#1d4539] font-medium underline whitespace-nowrap"
+                      >
+                        {expandedSpecialties.has(index)
+                          ? "show less"
+                          : `+${advocate.specialties.length - 2} more`}
+                      </button>
+                    )}
+                  </div>
+                </td>
+                <td>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-900">
+                      {advocate.yearsOfExperience}
+                    </span>
+                    <span className="text-sm text-gray-500">years</span>
+                    {advocate.yearsOfExperience >= 10 && (
+                      <span className="text-[#d59618]" title="Senior Advocate">
+                        ⭐
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="text-gray-600">{advocate.phoneNumber}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
-      {!isLoading && advocates.length === 0 && <p>No advocates found.</p>}
-      <br />
+
+      {!isLoading && advocates.length === 0 && (
+        <p className="my-4">No advocates found.</p>
+      )}
+
       {pagination && (
         <PaginationControls
           currentPage={pagination.page}
