@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PaginationControls from "@/components/PaginationControls";
+import LimitSelector from "@/components/LimitSelector";
 
 interface Advocate {
   id: string;
@@ -96,11 +98,6 @@ export default function Home() {
     }
   };
 
-  const handleLimitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setLimit(parseInt(e.target.value));
-    setPage(1);
-  };
-
   return (
     <main style={{ margin: "24px" }}>
       <h1>Solace Advocates</h1>
@@ -121,27 +118,16 @@ export default function Home() {
       </div>
       <br />
       {pagination && (
-        <div style={{ marginBottom: "16px" }}>
-          <label>
-            Results per page:{" "}
-            <select
-              value={limit}
-              onChange={handleLimitChange}
-              style={{ border: "1px solid black", padding: "4px" }}
-            >
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </label>
-          <span style={{ marginLeft: "16px" }}>
-            Showing {advocates.length > 0 ? (page - 1) * limit + 1 : 0} to{" "}
-            {Math.min(page * limit, pagination.total)} of {pagination.total}{" "}
-            results
-          </span>
-        </div>
+        <LimitSelector
+          limit={limit}
+          total={pagination.total}
+          currentPage={page}
+          currentCount={advocates.length}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       )}
       <br />
       {isLoading && <p>Loading...</p>}
@@ -179,36 +165,15 @@ export default function Home() {
       </table>
       {!isLoading && advocates.length === 0 && <p>No advocates found.</p>}
       <br />
-      {pagination && pagination.totalPages > 1 && (
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <button
-            onClick={handlePreviousPage}
-            disabled={!pagination.hasPreviousPage}
-            style={{
-              padding: "8px 16px",
-              border: "1px solid black",
-              cursor: pagination.hasPreviousPage ? "pointer" : "not-allowed",
-              opacity: pagination.hasPreviousPage ? 1 : 0.5
-            }}
-          >
-            Previous
-          </button>
-          <span>
-            Page {pagination.page} of {pagination.totalPages}
-          </span>
-          <button
-            onClick={handleNextPage}
-            disabled={!pagination.hasNextPage}
-            style={{
-              padding: "8px 16px",
-              border: "1px solid black",
-              cursor: pagination.hasNextPage ? "pointer" : "not-allowed",
-              opacity: pagination.hasNextPage ? 1 : 0.5
-            }}
-          >
-            Next
-          </button>
-        </div>
+      {pagination && (
+        <PaginationControls
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          hasNextPage={pagination.hasNextPage}
+          hasPreviousPage={pagination.hasPreviousPage}
+          onNextPage={handleNextPage}
+          onPreviousPage={handlePreviousPage}
+        />
       )}
     </main>
   );
